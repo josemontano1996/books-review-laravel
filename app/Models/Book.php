@@ -131,6 +131,18 @@ class Book extends Model
     }
 
 
+    /**
+     * Scope a query to apply a filter based on the given filter string.
+     *
+     * @param Builder $query The query builder instance.
+     * @param string|null $filter The filter string to apply. Possible values:
+     *                            - 'popular_last_month': Filter by popular books in the last month.
+     *                            - 'popular_last_6months': Filter by popular books in the last 6 months.
+     *                            - 'highest_rated_last_month': Filter by highest rated books in the last month.
+     *                            - 'highest_rated_last_6months': Filter by highest rated books in the last 6 months.
+     *                            - null or any other value: No filter applied.
+     * @return Builder The modified query builder instance.
+     */
     public function scopeApplyFilter(Builder $query, string|null $filter): Builder
     {
         return match ($filter) {

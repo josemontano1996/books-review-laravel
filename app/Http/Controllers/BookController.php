@@ -9,6 +9,9 @@ class BookController extends Controller
 {
     /**
      * Display a listing of the resource.
+     *
+     * @param \Illuminate\Http\Request $request The HTTP request instance.
+     * @return \Illuminate\View\View The view displaying the list of books.
      */
     public function index(Request $request)
     {
@@ -19,14 +22,6 @@ class BookController extends Controller
             $title,
             fn($query) => $query->title($title)
         )->applyFilter($filter)->get();
-
-        /*   $books = match ($filter) {
-              'popular_last_month' => $books->popularLastMonth(),
-              'popular_last_6months' => $books->popularLast6Months(),
-              'highest_rated_last_month' => $books->highestRatedLastMonth(),
-              'highest_rated_last_6months' => $books->highestRatedLast6Months(),
-
-          }; */
 
         return view('books.index', ['books' => $books]);
     }
@@ -50,9 +45,9 @@ class BookController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Book $book)
     {
-        //
+        return view('books.show', ['book' => $book]);
     }
 
     /**
