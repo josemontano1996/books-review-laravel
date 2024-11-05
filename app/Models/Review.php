@@ -16,6 +16,16 @@ class Review extends Model
     {
         return $this->belongsTo(Book::class);
     }
+    /**
+     * The "booted" method is automatically called when the model is booted.
+     *
+     * This method registers two model event listeners:
+     *
+     * 1. When a review is updated, it forgets the cache entry for the associated book.
+     * 2. When a review is deleted, it forgets the cache entry for the associated book.
+     *
+     * @return void
+     */
 
     protected static function booted()
     {

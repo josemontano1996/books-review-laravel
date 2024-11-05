@@ -36,6 +36,37 @@ class Book extends Model
     }
 
     /**
+     * Scope a query to include the count of reviews within a specified date range.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string|null $from The start date for the date range filter (optional).
+     * @param string|null $to The end date for the date range filter (optional).
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeWithReviewsCount(Builder $query, $from = null, $to = null): Builder
+    {
+        return $query->withCount([
+            'reviews' => fn(Builder $q) => $this->dateRangeFilter($q, $from, $to)
+        ]);
+    }
+    /**
+     * Scope a query to include the average rating of the book's reviews within a specified date range.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query The query builder instance.
+     * @param string|null $from The start date for filtering reviews (optional).
+     * @param string|null $to The end date for filtering reviews (optional).
+     * @return \Illuminate\Database\Eloquent\Builder The modified query builder instance.
+     */
+    public function scopeWithAvgRating(Builder $query, $from = null, $to = null): Builder
+    {
+        return $query->withAvg(
+            ['reviews' => fn(Builder $q) => $this->dateRangeFilter($q, $from, $to)],
+            'rating'
+        );
+    }
+
+
+    /**
      * Scope a query to only include popular books based on the number of reviews.
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
@@ -45,9 +76,7 @@ class Book extends Model
      */
     public function scopePopular(Builder $query, $from = null, $to = null): Builder
     {
-        return $query->withCount([
-            'reviews' => fn(Builder $q) => $this->dateRangeFilter($q, $from, $to)
-        ])->orderBy('reviews_count', 'desc');
+        return $query->withReviewsCount($from, $to)->orderBy('reviews_count', 'desc');
     }
 
     /**
@@ -60,10 +89,7 @@ class Book extends Model
      */
     public function scopeHighestRated(Builder $query, $from = null, $to = null): Builder
     {
-        return $query->withAvg(
-            ['reviews' => fn(Builder $q) => $this->dateRangeFilter($q, $from, $to)],
-            'rating'
-        )
+        return $query->withAvgRating($from, $to)
             ->orderBy('reviews_avg_rating', 'desc');
     }
 
@@ -123,7 +149,7 @@ class Book extends Model
      * @param int $lastMonths The number of months to look back for the highest rated books. Defaults to 1 month.
      * @return \Illuminate\Database\Eloquent\Builder
      */
-      public function scopeHighestRatedByLastMonths(Builder $query, int $lastMonths = 1): Builder
+    public function scopeHighestRatedByLastMonths(Builder $query, int $lastMonths = 1): Builder
     {
         $lastMonths < 1 && $lastMonths = 1;
 
@@ -150,10 +176,23 @@ class Book extends Model
             'popular_last_month' => $query->popularByLastMonths(),
             'popular_last_6months' => $query->popularByLastMonths(6),
 
-            'highest_rated_last_month' => $query->highestRatedByLastMonths(1),
+            'highest_rated_last_month' => $query->highestRatedByLastMonths(),
             'highest_rated_last_6months' => $query->highestRatedByLastMonths(6),
-            default => $query,
+            default => $query->latest()->withAvgRating()->withReviewsCount(),
         };
     }
 
+
+    /**
+     * The "booted" method is called after the model is booted.
+     * It registers model event listeners for the "updated" and "deleted" events.
+     * When a Book model is updated or deleted, the corresponding cache entry is forgotten.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::updated(fn(Book $book) => cache()->forget('book:' . $book->book_id));
+        static::deleted(fn(Book $book) => cache()->forget('book:' . $book->book_id));
+    }
 }

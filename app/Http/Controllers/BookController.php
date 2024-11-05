@@ -26,7 +26,15 @@ class BookController extends Controller
 
         $cacheKey = 'books:' . $filter . ':' . $title;
 
-        $books = cache()->remember($cacheKey, 3600, fn() => $books->get());
+        /*   $books =  cache()->remember(
+              $cacheKey,
+              3600,
+              fn() =>
+              $books->get()
+           ); */
+
+        $books = $books->paginate(10);
+
 
         return view(
             'books.index',
@@ -56,14 +64,19 @@ class BookController extends Controller
      * @param  \App\Models\Book  $book
      * @return \Illuminate\View\View
      */
-    //this route is reaching the database because of the route model binding,
-    //for it to not reach the db and use cache, we need to pass the id in params
-    //and not the book instance
-    public function show(Book $book)
-    {
-        $cacheKey = 'book:' . $book->id;
 
-        $book = cache()->remember($cacheKey, 3600, fn() => $book->load(['reviews' => fn($query) => $query->latest()]));
+    public function show(int $id)
+    {
+        $cacheKey = 'book:' . $id;
+
+        $book = cache()->remember(
+            $cacheKey,
+            3600,
+            fn() =>
+            Book::with(['reviews' => fn($query) => $query->latest()])
+                ->withAvgRating()->withReviewsCount()->findOrfail($id)
+        );
+
         return view(
             'books.show',
             ['book' => $book]
