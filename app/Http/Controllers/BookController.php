@@ -21,9 +21,17 @@ class BookController extends Controller
         $books = Book::when(
             $title,
             fn($query) => $query->title($title)
-        )->applyFilter($filter)->get();
+        )->applyFilter($filter);
 
-        return view('books.index', ['books' => $books]);
+
+        $cacheKey = 'books:' . $filter . ':' . $title;
+
+        $books = cache()->remember($cacheKey, 3600, fn() => $books->get());
+
+        return view(
+            'books.index',
+            ['books' => $books]
+        );
     }
 
     /**
@@ -44,10 +52,22 @@ class BookController extends Controller
 
     /**
      * Display the specified resource.
+     *
+     * @param  \App\Models\Book  $book
+     * @return \Illuminate\View\View
      */
+    //this route is reaching the database because of the route model binding,
+    //for it to not reach the db and use cache, we need to pass the id in params
+    //and not the book instance
     public function show(Book $book)
     {
-        return view('books.show', ['book' => $book]);
+        $cacheKey = 'book:' . $book->id;
+
+        $book = cache()->remember($cacheKey, 3600, fn() => $book->load(['reviews' => fn($query) => $query->latest()]));
+        return view(
+            'books.show',
+            ['book' => $book]
+        );
     }
 
     /**

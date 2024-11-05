@@ -150,7 +150,7 @@ class Book extends Model
             'popular_last_month' => $query->popularByLastMonths(),
             'popular_last_6months' => $query->popularByLastMonths(6),
 
-            'highest_rated_last_month' => $query->highestRatedByLastMonths(),
+            'highest_rated_last_month' => $query->highestRatedByLastMonths(1),
             'highest_rated_last_6months' => $query->highestRatedByLastMonths(6),
             default => $query,
         };
