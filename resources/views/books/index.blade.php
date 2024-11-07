@@ -55,4 +55,9 @@
             </li>
         @endforelse
     </ul>
+    <div class="mt-8">
+        @if (count($books))
+            {{ $books->links() }}
+        @endif
+    </div>
 @endsection

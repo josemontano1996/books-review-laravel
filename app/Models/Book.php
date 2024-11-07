@@ -192,6 +192,7 @@ class Book extends Model
      */
     protected static function booted()
     {
+        static::created(fn(Book $book) => cache()->forget('book:' . $book->book_id));
         static::updated(fn(Book $book) => cache()->forget('book:' . $book->book_id));
         static::deleted(fn(Book $book) => cache()->forget('book:' . $book->book_id));
     }
